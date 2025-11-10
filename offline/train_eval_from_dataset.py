@@ -1,5 +1,6 @@
 # offline/train_eval_from_dataset.py
 import os
+from datetime import datetime
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Lasso
@@ -15,10 +16,20 @@ N_FOLDS = 5
 
 # 우리가 예측하고 싶은 타깃들 (필요한 것만 골라서)
 TARGETS = [
+    "brainfatigue",
+    "concentrate",
+    "LIFEPOWER",
+    "ATTACK",
+    "STRESS",
+    "UNSTABLE",
+    "SUSPICION",
+    "BALANCE",
+    "CHARM",
+    "ENERGY",
+    "SELFCONTROL",
+    "HYSTERIA",
     "depression",
     "happines",
-    "STRESS",
-    "ATTACK",
 ]
 
 
@@ -68,8 +79,16 @@ def main():
     n_samples = len(df)
     n_splits = max(2, min(N_FOLDS, n_samples))
 
-    print(f"[INFO] n_samples = {n_samples}, n_splits = {n_splits}")
-    print(f"[INFO] feature_cols = {feature_cols}")
+    # 출력 결과를 모을 리스트
+    output_lines = []
+    
+    def log_output(message):
+        """콘솔에 출력하고 결과 리스트에도 추가"""
+        print(message)
+        output_lines.append(message)
+
+    log_output(f"[INFO] n_samples = {n_samples}, n_splits = {n_splits}")
+    log_output(f"[INFO] feature_cols = {feature_cols}")
 
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=RANDOM_STATE)
 
@@ -111,13 +130,25 @@ def main():
             "formula": formula,
         }
 
-    print("=== CROSS-VALIDATION RESULTS ===")
+    log_output("=== CROSS-VALIDATION RESULTS ===")
     for target, info in results.items():
-        print(f"\nTarget: {target}")
-        print(f"  MAE: {info['cv_mae']:.4f}")
-        print(f"  R^2: {info['cv_r2']:.4f}")
-        print("  Formula:")
-        print("   ", info["formula"])
+        log_output(f"\nTarget: {target}")
+        log_output(f"  MAE: {info['cv_mae']:.4f}")
+        log_output(f"  R^2: {info['cv_r2']:.4f}")
+        log_output("  Formula:")
+        log_output(f"   {info['formula']}")
+
+    # 결과를 파일로 저장
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_dir = "modeling"
+    os.makedirs(output_dir, exist_ok=True)
+    output_filename = os.path.join(output_dir, f"train_eval_results_{timestamp}.txt")
+    
+    with open(output_filename, "w", encoding="utf-8") as f:
+        f.write("\n".join(output_lines))
+        f.write("\n")
+    
+    log_output(f"\n[INFO] Results saved to: {output_filename}")
 
 
 if __name__ == "__main__":
